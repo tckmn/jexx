@@ -32,7 +32,8 @@ import static org.lwjgl.system.MemoryUtil.*;
 public class Jexx {
 
     private final int WIDTH = 600, HEIGHT = 600;
-    private final double SQRT_3_4 = Math.sqrt(3f) / 2;
+    private final double HEX_SIZE = 0.3;
+    private final double SQRT_3_4 = Math.sqrt(3) / 2;
 
     private final String vertexShaderSource =
         "#version 330 core\n"
@@ -45,7 +46,7 @@ public class Jexx {
         "#version 330 core\n"
       + "out vec4 color;\n"
       + "void main() {\n"
-      + "    color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+      + "    color = vec4(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0, 1.0f);\n"
       + "}";
 
     private int shaderProgram, vao;
@@ -130,12 +131,12 @@ public class Jexx {
         glDeleteShader(fragmentShader);
 
         double vertices[] = {
-            -1f, 0f, 0f,
-            -0.5f, SQRT_3_4, 0f,
-            0.5f, SQRT_3_4, 0f,
-            1f, 0f, 0f,
-            0.5f, -SQRT_3_4, 0f,
-            -0.5f, -SQRT_3_4, 0f
+              -1 * HEX_SIZE,         0 * HEX_SIZE, 0,
+            -0.5 * HEX_SIZE,  SQRT_3_4 * HEX_SIZE, 0,
+             0.5 * HEX_SIZE,  SQRT_3_4 * HEX_SIZE, 0,
+               1 * HEX_SIZE,         0 * HEX_SIZE, 0,
+             0.5 * HEX_SIZE, -SQRT_3_4 * HEX_SIZE, 0,
+            -0.5 * HEX_SIZE, -SQRT_3_4 * HEX_SIZE, 0
         };
         int indices[] = {
             0, 1, 2,
@@ -165,7 +166,7 @@ public class Jexx {
     }
 
     private void loop() {
-        glClearColor(0f, 0f, 0f, 1f);
+        glClearColor(0x18 / 255f, 0x18 / 255f, 0x18 / 255f, 1);
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
