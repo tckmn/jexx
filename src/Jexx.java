@@ -35,6 +35,8 @@ public class Jexx {
 
     public static final double HEX_SIZE = 0.3;
     public static final double BLOCK_SIZE = 0.1;
+    public static final double BLOCK_SPEED = 1.5;
+    public static final double BLOCK_DELAY = 3;
 
     private final int WIDTH = 600, HEIGHT = 600;
     private final int NUM_BLOCKS = 5;
@@ -45,6 +47,21 @@ public class Jexx {
     private ArrayList<Block> fallingBlocks = new ArrayList<>();
 
     private long window;
+
+    private int mod(int x, int y) {
+        return x % y + (x < 0 ? y : 0);
+    }
+
+    private int floodFill(int i, int j, int color) {
+        if (j < 0 || j >= NUM_BLOCKS) return 0;
+        boolean rightColor = blocks[i][j].color == color;
+        if (rightColor) blocks[i][j].color += 100;
+        return rightColor ?  (1 +
+            floodFill(mod(i+1, 6), j, color) +
+            floodFill(mod(i-1, 6), j, color) +
+            floodFill(i, j+1, color) +
+            floodFill(i, j-1, color)) : 0;
+    }
 
     public void run() {
         try {
@@ -125,12 +142,21 @@ public class Jexx {
     private void loop() {
         glClearColor(0x18 / 255f, 0x18 / 255f, 0x18 / 255f, 1);
 
+        double lastTime = glfwGetTime();
+        double timeSinceBlock = 0;
+
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
             glClear(GL_COLOR_BUFFER_BIT);
 
-            if (Math.random() < 0.1) {
+            double time = glfwGetTime();
+            double deltaTime = time - lastTime;
+            lastTime = time;
+
+            timeSinceBlock += deltaTime;
+            if (timeSinceBlock >= BLOCK_DELAY) {
+                timeSinceBlock -= BLOCK_DELAY;
                 Block block = new Block();
                 block.color = (int)(Math.random() * 6);
                 block.genVAO((int)(Math.random() * 6), NUM_BLOCKS, GL_DYNAMIC_DRAW);
@@ -141,11 +167,23 @@ public class Jexx {
 
             for (Iterator<Block> it = fallingBlocks.iterator(); it.hasNext();) {
                 Block block = it.next();
-                block.dist -= 0.1;
+                block.dist -= BLOCK_SPEED * deltaTime;
                 if (block.dist <= 0 || blocks[block.rot][(int)(block.dist)].color != -1) {
                     for (int i = 0; i < NUM_BLOCKS; ++i) {
                         if (blocks[block.rot][i].color == -1) {
                             blocks[block.rot][i].color = block.color;
+                            int numTouching = floodFill(block.rot, i, block.color);
+                            for (int r = 0; r < 6; ++r) {
+                                for (int d = 0; d < NUM_BLOCKS; ++d) {
+                                    if (blocks[r][d].color >= 100) {
+                                        if (numTouching >= 3) {
+                                            blocks[r][d].color = -1;
+                                        } else {
+                                            blocks[r][d].color -= 100;
+                                        }
+                                    }
+                                }
+                            }
                             break;
                         }
                         // TODO check for losing
