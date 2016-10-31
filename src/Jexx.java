@@ -17,6 +17,7 @@
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -122,15 +123,27 @@ public class Jexx {
 
             hex.draw();
 
+            for (Iterator<Block> it = fallingBlocks.iterator(); it.hasNext();) {
+                Block block = it.next();
+                block.dist -= 0.1;
+                if (block.dist <= 0 || blocks[block.rot][(int)(block.dist)].color != -1) {
+                    for (int i = 0; i < NUM_BLOCKS; ++i) {
+                        if (blocks[block.rot][i].color == -1) {
+                            blocks[block.rot][i].color = block.color;
+                            break;
+                        }
+                        // TODO check for losing
+                    }
+                    it.remove();
+                } else {
+                    block.updateVAO();
+                    block.draw();
+                }
+            }
             for (int i = 0; i < 6; ++i) {
                 for (int j = 0; j < NUM_BLOCKS; ++j) {
                     blocks[i][j].draw();
                 }
-            }
-            for (Block block : fallingBlocks) {
-                block.dist -= 0.1;
-                block.updateVAO();
-                block.draw();
             }
 
             glfwSwapBuffers(window);
