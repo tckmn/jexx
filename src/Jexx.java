@@ -16,6 +16,7 @@
  */
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -35,11 +36,12 @@ public class Jexx {
     public static final double BLOCK_SIZE = 0.1;
 
     private final int WIDTH = 600, HEIGHT = 600;
-    private final int NUM_BLOCKS = 10;
+    private final int NUM_BLOCKS = 5;
 
     private Hex hex = new Hex();
 
     private Block[][] blocks = new Block[6][NUM_BLOCKS];
+    private ArrayList<Block> fallingBlocks = new ArrayList<>();
 
     private long window;
 
@@ -111,12 +113,24 @@ public class Jexx {
 
             glClear(GL_COLOR_BUFFER_BIT);
 
+            if (Math.random() < 0.1) {
+                Block block = new Block();
+                block.color = (int)(Math.random() * 6);
+                block.genVAO((int)(Math.random() * 6), NUM_BLOCKS, GL_DYNAMIC_DRAW);
+                fallingBlocks.add(block);
+            }
+
             hex.draw();
 
             for (int i = 0; i < 6; ++i) {
                 for (int j = 0; j < NUM_BLOCKS; ++j) {
                     blocks[i][j].draw();
                 }
+            }
+            for (Block block : fallingBlocks) {
+                block.dist -= 0.1;
+                block.updateVAO();
+                block.draw();
             }
 
             glfwSwapBuffers(window);

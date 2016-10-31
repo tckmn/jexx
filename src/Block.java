@@ -30,6 +30,7 @@ public class Block {
 
     private static int shaders[];
 
+    private int arrayBuffer;
     private double vertices[];
 
     private static final int indices[] = {
@@ -48,6 +49,8 @@ public class Block {
         { 0xba, 0x8b, 0xaf }  // purple
     };
     public int color = -1;
+    public int rot;
+    public double dist;
 
     public void draw() {
         if (color == -1) return;
@@ -99,6 +102,25 @@ public class Block {
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
+        this.rot = rot;
+        this.dist = dist;
+        updateVAO(true);
+
+        arrayBuffer = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+        glBufferData(GL_ARRAY_BUFFER, vertices, usage);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers());
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_DOUBLE, false, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    private void updateVAO(boolean initial) {
         double x1 = Math.cos(rot * Math.PI / 3),
                y1 = Math.sin(rot * Math.PI / 3),
                x2 = Math.cos((rot+1) * Math.PI / 3),
@@ -111,17 +133,16 @@ public class Block {
             x2 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), y2 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), 0
         };
 
-        glBindBuffer(GL_ARRAY_BUFFER, glGenBuffers());
-        glBufferData(GL_ARRAY_BUFFER, vertices, usage);
+        if (!initial) {
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertices);
+            glBindVertexArray(0);
+        }
+    }
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers());
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_DOUBLE, false, 0, 0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+    public void updateVAO() {
+        updateVAO(false);
     }
 
 }
