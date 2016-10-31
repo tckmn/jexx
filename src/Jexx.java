@@ -17,7 +17,7 @@
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
@@ -56,7 +56,7 @@ public class Jexx {
         if (j < 0 || j >= NUM_BLOCKS) return 0;
         boolean rightColor = blocks[i][j].color == color;
         if (rightColor) blocks[i][j].color += 100;
-        return rightColor ?  (1 +
+        return rightColor ? (1 +
             floodFill(mod(i+1, 6), j, color) +
             floodFill(mod(i-1, 6), j, color) +
             floodFill(i, j+1, color) +
@@ -165,10 +165,11 @@ public class Jexx {
 
             hex.draw();
 
-            for (Iterator<Block> it = fallingBlocks.iterator(); it.hasNext();) {
+            for (ListIterator<Block> it = fallingBlocks.listIterator(); it.hasNext();) {
                 Block block = it.next();
                 block.dist -= BLOCK_SPEED * deltaTime;
                 if (block.dist <= 0 || blocks[block.rot][(int)(block.dist)].color != -1) {
+                    it.remove();
                     for (int i = 0; i < NUM_BLOCKS; ++i) {
                         if (blocks[block.rot][i].color == -1) {
                             blocks[block.rot][i].color = block.color;
@@ -178,6 +179,15 @@ public class Jexx {
                                     if (blocks[r][d].color >= 100) {
                                         if (numTouching >= 3) {
                                             blocks[r][d].color = -1;
+                                            for (int d2 = d + 1; d2 < NUM_BLOCKS; ++d2) {
+                                                if (blocks[r][d2].color != -1 && blocks[r][d2].color < 100) {
+                                                    Block fall = new Block();
+                                                    fall.color = blocks[r][d2].color;
+                                                    fall.genVAO(r, d2, GL_DYNAMIC_DRAW);
+                                                    it.add(fall);
+                                                    blocks[r][d2].color = -1;
+                                                }
+                                            }
                                         } else {
                                             blocks[r][d].color -= 100;
                                         }
@@ -188,7 +198,6 @@ public class Jexx {
                         }
                         // TODO check for losing
                     }
-                    it.remove();
                 } else {
                     block.updateVAO();
                     block.draw();
