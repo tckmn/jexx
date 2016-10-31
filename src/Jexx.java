@@ -80,6 +80,7 @@ public class Jexx {
                                 fall.color = blocks[r][d2].color;
                                 fall.genVAO(r, d2, GL_DYNAMIC_DRAW);
                                 it.add(fall);
+                                it.previous();
                                 blocks[r][d2].color = -1;
                             }
                         }
