@@ -32,7 +32,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 public class Jexx {
 
     private final int WIDTH = 600, HEIGHT = 600;
-    private final float SQRT_3_4 = (float) Math.sqrt(3f) / 2;
+    private final double SQRT_3_4 = Math.sqrt(3f) / 2;
 
     private final String vertexShaderSource =
         "#version 330 core\n"
@@ -75,7 +75,6 @@ public class Jexx {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 
         window = glfwCreateWindow(WIDTH, HEIGHT, "Jexx", NULL, NULL);
         if (window == NULL) {
@@ -130,7 +129,7 @@ public class Jexx {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
-        float vertices[] = {
+        double vertices[] = {
             -1f, 0f, 0f,
             -0.5f, SQRT_3_4, 0f,
             0.5f, SQRT_3_4, 0f,
@@ -154,7 +153,7 @@ public class Jexx {
 
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+        glVertexAttribPointer(0, 3, GL_DOUBLE, false, 0, 0);
         glEnableVertexAttribArray(0);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
