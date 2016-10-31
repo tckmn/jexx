@@ -31,25 +31,15 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
 
+    public static final double HEX_SIZE = 0.3;
+    public static final double BLOCK_SIZE = 0.1;
+
     private final int WIDTH = 600, HEIGHT = 600;
-    private final double HEX_SIZE = 0.3;
-    private final double SQRT_3_4 = Math.sqrt(3) / 2;
+    private final int NUM_BLOCKS = 10;
 
-    private final String vertexShaderSource =
-        "#version 330 core\n"
-      + "layout (location = 0) in vec3 position;\n"
-      + "void main() {\n"
-      + "    gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
-      + "}";
+    private Hex hex = new Hex();
 
-    private final String fragmentShaderSource =
-        "#version 330 core\n"
-      + "out vec4 color;\n"
-      + "void main() {\n"
-      + "    color = vec4(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0, 1.0f);\n"
-      + "}";
-
-    private int shaderProgram, vao;
+    private Block[][] blocks = new Block[6][NUM_BLOCKS];
 
     private long window;
 
@@ -98,69 +88,17 @@ public class Jexx {
 
         glfwSwapInterval(1); // v-sync
 
-        // compiling shaders
+        hex.compileShader();
+        hex.genVAO();
 
-        IntBuffer success = BufferUtils.createIntBuffer(1);
-
-        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, vertexShaderSource);
-        glCompileShader(vertexShader);
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetShaderInfoLog(vertexShader));
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < NUM_BLOCKS; ++j) {
+                blocks[i][j] = new Block();
+                blocks[i][j].genVAO(i, j);
+            }
         }
-
-        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, fragmentShaderSource);
-        glCompileShader(fragmentShader);
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetShaderInfoLog(fragmentShader));
-        }
-
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        glGetProgramiv(shaderProgram, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetProgramInfoLog(shaderProgram));
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        double vertices[] = {
-              -1 * HEX_SIZE,         0 * HEX_SIZE, 0,
-            -0.5 * HEX_SIZE,  SQRT_3_4 * HEX_SIZE, 0,
-             0.5 * HEX_SIZE,  SQRT_3_4 * HEX_SIZE, 0,
-               1 * HEX_SIZE,         0 * HEX_SIZE, 0,
-             0.5 * HEX_SIZE, -SQRT_3_4 * HEX_SIZE, 0,
-            -0.5 * HEX_SIZE, -SQRT_3_4 * HEX_SIZE, 0
-        };
-        int indices[] = {
-            0, 1, 2,
-            0, 2, 3,
-            0, 3, 4,
-            0, 4, 5
-        };
-
-        vao = glGenVertexArrays();
-        int vbo = glGenBuffers();
-        int ebo = glGenBuffers();
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_DOUBLE, false, 0, 0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-
-        // done compiling shaders
+        blocks[0][0].color = 0; // temporary
+        blocks[0][0].compileShader();
 
         glfwShowWindow(window);
     }
@@ -173,10 +111,13 @@ public class Jexx {
 
             glClear(GL_COLOR_BUFFER_BIT);
 
-            glUseProgram(shaderProgram);
-            glBindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-            glBindVertexArray(0);
+            hex.draw();
+
+            for (int i = 0; i < 6; ++i) {
+                for (int j = 0; j < NUM_BLOCKS; ++j) {
+                    blocks[i][j].draw();
+                }
+            }
 
             glfwSwapBuffers(window);
         }
