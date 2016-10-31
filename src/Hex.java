@@ -19,9 +19,14 @@ public class Hex {
     private static final String vertexShaderSource =
         "#version 330 core\n"
       + "layout (location = 0) in vec3 position;\n"
+      + "uniform float rotationOffset;\n"
       + "void main() {\n"
-      + "    gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+      + "    gl_Position = vec4("
+      + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
+      + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
+      + "        position.z, 1.0);\n"
       + "}";
+    private int rotationOffset;
 
     private static final String fragmentShaderSource =
         "#version 330 core\n"
@@ -76,6 +81,8 @@ public class Hex {
             System.err.println(glGetProgramInfoLog(shaderProgram));
         }
 
+        rotationOffset = glGetUniformLocation(shaderProgram, "rotationOffset");
+
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
     }
@@ -100,6 +107,7 @@ public class Hex {
     public void draw() {
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
+        glUniform1f(rotationOffset, (float)Jexx.rotationOffset);
         glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }

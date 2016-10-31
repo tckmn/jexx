@@ -46,6 +46,7 @@ public class Jexx {
     private final int NUM_BLOCKS = 8;
 
     private Hex hex = new Hex();
+    public static double rotationOffset = 0;
 
     private Block[][] blocks = new Block[6][NUM_BLOCKS];
     private ArrayList<Block> fallingBlocks = new ArrayList<>();
@@ -145,6 +146,7 @@ public class Jexx {
                             (blocks[i+1][j].color = blocks[i][j].color);
                     }
                 }
+                rotationOffset -= Math.PI / 3;
             } else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
                 for (int i = 4; i >= 0; --i) {
                     for (int j = 0; j < NUM_BLOCKS; ++j) {
@@ -153,6 +155,7 @@ public class Jexx {
                             (blocks[i+1][j].color = blocks[i][j].color);
                     }
                 }
+                rotationOffset += Math.PI / 3;
             }
         });
 
@@ -187,6 +190,9 @@ public class Jexx {
             double deltaTime = time - lastTime;
             lastTime = time;
 
+            rotationOffset *= Math.pow(0.01, deltaTime);
+            if (Math.abs(rotationOffset) < 0.001) rotationOffset = 0;
+
             timeSinceBlock += deltaTime;
             if (timeSinceBlock >= BLOCK_DELAY) {
                 timeSinceBlock -= BLOCK_DELAY;
@@ -212,7 +218,7 @@ public class Jexx {
                     }
                 } else {
                     block.updateVAO();
-                    block.draw();
+                    block.draw(true);
                 }
             }
             Stream.of(blocks).flatMap(Stream::of).forEach(Block::draw);

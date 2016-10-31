@@ -17,9 +17,14 @@ public class Block {
     private static final String vertexShaderSource =
         "#version 330 core\n"
       + "layout (location = 0) in vec3 position;\n"
+      + "uniform float rotationOffset;\n"
       + "void main() {\n"
-      + "    gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+      + "    gl_Position = vec4("
+      + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
+      + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
+      + "        position.z, 1.0);\n"
       + "}";
+    private static int rotationOffsets[];
 
     private static final String fragmentShaderSource =
         "#version 330 core\n"
@@ -52,18 +57,25 @@ public class Block {
     public int rot;
     public double dist;
 
-    public void draw() {
+    public void draw(boolean ignoreRotation) {
         if (color == -1) return;
         // System.out.println("drawing");
 
         glUseProgram(shaders[color]);
         glBindVertexArray(vao);
+        glUniform1f(rotationOffsets[color],
+                ignoreRotation ? 0 : (float)Jexx.rotationOffset);
         glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
+    public void draw() {
+        draw(false);
+    }
+
     public static void compileShaders() {
         shaders = new int[colors.length];
+        rotationOffsets = new int[colors.length];
         for (int c = 0; c < colors.length; ++c) {
             IntBuffer success = BufferUtils.createIntBuffer(1);
 
@@ -92,6 +104,8 @@ public class Block {
             if (success.get(0) == 0) {
                 System.err.println(glGetProgramInfoLog(shaders[c]));
             }
+
+            rotationOffsets[c] = glGetUniformLocation(shaders[c], "rotationOffset");
 
             glDeleteShader(vertexShader);
             glDeleteShader(fragmentShader);
