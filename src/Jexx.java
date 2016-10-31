@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.nio.IntBuffer;
+
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
@@ -22,9 +24,28 @@ import org.lwjgl.opengl.*;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
+
+    private final int WIDTH = 600, HEIGHT = 600;
+
+    private final String vertexShaderSource =
+        "#version 330 core\n"
+      + "layout (location = 0) in vec3 position;\n"
+      + "void main() {\n"
+      + "    gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+      + "}";
+
+    private final String fragmentShaderSource =
+        "#version 330 core\n"
+      + "out vec4 color;\n"
+      + "void main() {\n"
+      + "    color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+      + "}";
 
     private long window;
 
@@ -48,10 +69,22 @@ public class Jexx {
             throw new IllegalStateException("glfwInit() failed");
         }
 
-        window = glfwCreateWindow(600, 600, "Jexx", NULL, NULL);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Jexx", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("glfwCreateWindow() failed");
         }
+        glfwMakeContextCurrent(window);
+
+        GL.createCapabilities();
+
+        IntBuffer w = BufferUtils.createIntBuffer(1);
+        IntBuffer h = BufferUtils.createIntBuffer(1);
+        glfwGetFramebufferSize(window, w, h);
+        glViewport(0, 0, w.get(0), h.get(0));
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
@@ -59,21 +92,73 @@ public class Jexx {
             }
         });
 
-        glfwMakeContextCurrent(window);
         glfwSwapInterval(1); // v-sync
 
         glfwShowWindow(window);
     }
 
     private void loop() {
-        GL.createCapabilities();
+        glClearColor(0f, 0f, 0f, 1f);
 
-        glClearColor(0f, 0f, 0f, 0f);
+        IntBuffer success = BufferUtils.createIntBuffer(1);
+
+        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, vertexShaderSource);
+        glCompileShader(vertexShader);
+        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
+        if (success.get(0) == 0) {
+            System.err.println(glGetShaderInfoLog(vertexShader));
+        }
+
+        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, fragmentShaderSource);
+        glCompileShader(fragmentShader);
+        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
+        if (success.get(0) == 0) {
+            System.err.println(glGetShaderInfoLog(fragmentShader));
+        }
+
+        int shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        glGetProgramiv(shaderProgram, GL_COMPILE_STATUS, success);
+        if (success.get(0) == 0) {
+            System.err.println(glGetProgramInfoLog(shaderProgram));
+        }
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        float vertices[] = {
+            -0.5f, -0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+             0.0f,  0.5f, 0.0f
+        };
+
+        int vao = glGenVertexArrays();
+        int vbo = glGenBuffers();
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        glBufferData(vbo, vertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
 
         while (!glfwWindowShouldClose(window)) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glfwSwapBuffers(window);
             glfwPollEvents();
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glUseProgram(shaderProgram);
+            glBindVertexArray(vao);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+
+            glfwSwapBuffers(window);
         }
     }
 
