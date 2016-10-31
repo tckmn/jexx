@@ -86,6 +86,22 @@ public class Jexx {
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(window, true);
+            } else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+                for (int i = 0; i < 5; ++i) {
+                    for (int j = 0; j < NUM_BLOCKS; ++j) {
+                        // swap color with block immediately to the left
+                        blocks[i][j].color += blocks[i+1][j].color -
+                            (blocks[i+1][j].color = blocks[i][j].color);
+                    }
+                }
+            } else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+                for (int i = 4; i >= 0; --i) {
+                    for (int j = 0; j < NUM_BLOCKS; ++j) {
+                        // swap color with block immediately to the left
+                        blocks[i][j].color += blocks[i+1][j].color -
+                            (blocks[i+1][j].color = blocks[i][j].color);
+                    }
+                }
             }
         });
 
