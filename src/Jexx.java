@@ -191,8 +191,8 @@ public class Jexx {
             double deltaTime = time - lastTime;
             lastTime = time;
 
-            rotationOffset *= Math.pow(0.01, deltaTime);
-            if (Math.abs(rotationOffset) < 0.001) rotationOffset = 0;
+            rotationOffset *= Math.pow(0.003, deltaTime);
+            if (Math.abs(rotationOffset) < 0.01) rotationOffset = 0;
 
             timeSinceBlock += deltaTime;
             if (timeSinceBlock >= BLOCK_DELAY) {
