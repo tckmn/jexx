@@ -139,7 +139,7 @@ public class Jexx {
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-        glBufferData(vbo, vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
         glEnableVertexAttribArray(0);
 
