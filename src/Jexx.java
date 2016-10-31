@@ -47,6 +47,8 @@ public class Jexx {
       + "    color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
       + "}";
 
+    private int shaderProgram, vao;
+
     private long window;
 
     public void run() {
@@ -94,11 +96,7 @@ public class Jexx {
 
         glfwSwapInterval(1); // v-sync
 
-        glfwShowWindow(window);
-    }
-
-    private void loop() {
-        glClearColor(0f, 0f, 0f, 1f);
+        // compiling shaders
 
         IntBuffer success = BufferUtils.createIntBuffer(1);
 
@@ -118,7 +116,7 @@ public class Jexx {
             System.err.println(glGetShaderInfoLog(fragmentShader));
         }
 
-        int shaderProgram = glCreateProgram();
+        shaderProgram = glCreateProgram();
         glAttachShader(shaderProgram, vertexShader);
         glAttachShader(shaderProgram, fragmentShader);
         glLinkProgram(shaderProgram);
@@ -136,7 +134,7 @@ public class Jexx {
              0.0f,  0.5f, 0.0f
         };
 
-        int vao = glGenVertexArrays();
+        vao = glGenVertexArrays();
         int vbo = glGenBuffers();
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -147,6 +145,14 @@ public class Jexx {
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
+
+        // done compiling shaders
+
+        glfwShowWindow(window);
+    }
+
+    private void loop() {
+        glClearColor(0f, 0f, 0f, 1f);
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
