@@ -16,6 +16,10 @@
  */
 
 import java.nio.IntBuffer;
+import java.util.stream.Stream;
+import java.util.stream.IntStream;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
@@ -33,13 +37,13 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
 
-    public static final double HEX_SIZE = 0.3;
-    public static final double BLOCK_SIZE = 0.1;
-    public static final double BLOCK_SPEED = 1.5;
+    public static final double HEX_SIZE = 0.2;
+    public static final double BLOCK_SIZE = 0.08;
+    public static final double BLOCK_SPEED = 3;
     public static final double BLOCK_DELAY = 3;
 
     private final int WIDTH = 600, HEIGHT = 600;
-    private final int NUM_BLOCKS = 5;
+    private final int NUM_BLOCKS = 8;
 
     private Hex hex = new Hex();
 
@@ -61,6 +65,36 @@ public class Jexx {
             floodFill(mod(i-1, 6), j, color) +
             floodFill(i, j+1, color) +
             floodFill(i, j-1, color)) : 0;
+    }
+
+    private void postFloodFill(ListIterator<Block> it, int numTouching) {
+        for (int r = 0; r < 6; ++r) {
+            for (int d = 0; d < NUM_BLOCKS; ++d) {
+                if (blocks[r][d].color >= 100) {
+                    if (numTouching >= 3) {
+                        blocks[r][d].color = -1;
+                        for (int d2 = d + 1; d2 < NUM_BLOCKS; ++d2) {
+                            if (blocks[r][d2].color != -1 && blocks[r][d2].color < 100) {
+                                Block fall = new Block();
+                                fall.color = blocks[r][d2].color;
+                                fall.genVAO(r, d2, GL_DYNAMIC_DRAW);
+                                it.add(fall);
+                                blocks[r][d2].color = -1;
+                            }
+                        }
+                    } else {
+                        blocks[r][d].color -= 100;
+                    }
+                }
+            }
+        }
+    }
+
+    private void spawnBlocks() {
+        Block block = new Block();
+        block.color = (int)(Math.random() * 6);
+        block.genVAO((int)(Math.random() * 6), NUM_BLOCKS, GL_DYNAMIC_DRAW);
+        fallingBlocks.add(block);
     }
 
     public void run() {
@@ -134,7 +168,6 @@ public class Jexx {
                 blocks[i][j].genVAO(i, j, GL_STATIC_DRAW);
             }
         }
-        blocks[0][0].color = 0; // temporary
 
         glfwShowWindow(window);
     }
@@ -157,10 +190,7 @@ public class Jexx {
             timeSinceBlock += deltaTime;
             if (timeSinceBlock >= BLOCK_DELAY) {
                 timeSinceBlock -= BLOCK_DELAY;
-                Block block = new Block();
-                block.color = (int)(Math.random() * 6);
-                block.genVAO((int)(Math.random() * 6), NUM_BLOCKS, GL_DYNAMIC_DRAW);
-                fallingBlocks.add(block);
+                spawnBlocks();
             }
 
             hex.draw();
@@ -168,46 +198,24 @@ public class Jexx {
             for (ListIterator<Block> it = fallingBlocks.listIterator(); it.hasNext();) {
                 Block block = it.next();
                 block.dist -= BLOCK_SPEED * deltaTime;
-                if (block.dist <= 0 || blocks[block.rot][(int)(block.dist)].color != -1) {
+                if (block.dist <= 0 || blocks[block.rot][(int)block.dist].color != -1) {
                     it.remove();
-                    for (int i = 0; i < NUM_BLOCKS; ++i) {
-                        if (blocks[block.rot][i].color == -1) {
-                            blocks[block.rot][i].color = block.color;
-                            int numTouching = floodFill(block.rot, i, block.color);
-                            for (int r = 0; r < 6; ++r) {
-                                for (int d = 0; d < NUM_BLOCKS; ++d) {
-                                    if (blocks[r][d].color >= 100) {
-                                        if (numTouching >= 3) {
-                                            blocks[r][d].color = -1;
-                                            for (int d2 = d + 1; d2 < NUM_BLOCKS; ++d2) {
-                                                if (blocks[r][d2].color != -1 && blocks[r][d2].color < 100) {
-                                                    Block fall = new Block();
-                                                    fall.color = blocks[r][d2].color;
-                                                    fall.genVAO(r, d2, GL_DYNAMIC_DRAW);
-                                                    it.add(fall);
-                                                    blocks[r][d2].color = -1;
-                                                }
-                                            }
-                                        } else {
-                                            blocks[r][d].color -= 100;
-                                        }
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                        // TODO check for losing
+                    OptionalInt d = IntStream.range(0, NUM_BLOCKS)
+                        .filter(x -> { return blocks[block.rot][x].color == -1; })
+                        .findFirst();
+                    if (d.isPresent()) {
+                        blocks[block.rot][d.getAsInt()].color = block.color;
+                        int numTouching = floodFill(block.rot, d.getAsInt(), block.color);
+                        postFloodFill(it, numTouching);
+                    } else {
+                        // TODO game is lost
                     }
                 } else {
                     block.updateVAO();
                     block.draw();
                 }
             }
-            for (int i = 0; i < 6; ++i) {
-                for (int j = 0; j < NUM_BLOCKS; ++j) {
-                    blocks[i][j].draw();
-                }
-            }
+            Stream.of(blocks).flatMap(Stream::of).forEach(Block::draw);
 
             glfwSwapBuffers(window);
         }
