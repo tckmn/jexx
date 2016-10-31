@@ -91,14 +91,14 @@ public class Jexx {
         hex.compileShader();
         hex.genVAO();
 
+        Block.compileShaders();
         for (int i = 0; i < 6; ++i) {
             for (int j = 0; j < NUM_BLOCKS; ++j) {
                 blocks[i][j] = new Block();
-                blocks[i][j].genVAO(i, j);
+                blocks[i][j].genVAO(i, j, GL_STATIC_DRAW);
             }
         }
         blocks[0][0].color = 0; // temporary
-        blocks[0][0].compileShader();
 
         glfwShowWindow(window);
     }

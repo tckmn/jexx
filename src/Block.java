@@ -28,12 +28,16 @@ public class Block {
       + "    color = vec4(%d / 255.0, %d / 255.0, %d / 255.0, 1.0f);\n"
       + "}";
 
+    private static int shaders[];
+
+    private double vertices[];
+
     private static final int indices[] = {
         0, 1, 2,
         0, 2, 3
     };
 
-    private int shaderProgram, vao;
+    private int vao;
 
     private static final int[][] colors = {
         { 0xab, 0x46, 0x42 }, // red
@@ -49,48 +53,49 @@ public class Block {
         if (color == -1) return;
         // System.out.println("drawing");
 
-        glUseProgram(shaderProgram);
+        glUseProgram(shaders[color]);
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
-    public void compileShader() {
-        if (color == -1) return;
+    public static void compileShaders() {
+        shaders = new int[colors.length];
+        for (int c = 0; c < colors.length; ++c) {
+            IntBuffer success = BufferUtils.createIntBuffer(1);
 
-        IntBuffer success = BufferUtils.createIntBuffer(1);
+            int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertexShader, vertexShaderSource);
+            glCompileShader(vertexShader);
+            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
+            if (success.get(0) == 0) {
+                System.err.println(glGetShaderInfoLog(vertexShader));
+            }
 
-        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, vertexShaderSource);
-        glCompileShader(vertexShader);
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetShaderInfoLog(vertexShader));
+            int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragmentShader, String.format(fragmentShaderSource,
+                        colors[c][0], colors[c][1], colors[c][2]));
+            glCompileShader(fragmentShader);
+            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
+            if (success.get(0) == 0) {
+                System.err.println(glGetShaderInfoLog(fragmentShader));
+            }
+
+            shaders[c] = glCreateProgram();
+            glAttachShader(shaders[c], vertexShader);
+            glAttachShader(shaders[c], fragmentShader);
+            glLinkProgram(shaders[c]);
+            glGetProgramiv(shaders[c], GL_COMPILE_STATUS, success);
+            if (success.get(0) == 0) {
+                System.err.println(glGetProgramInfoLog(shaders[c]));
+            }
+
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
         }
-
-        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, String.format(fragmentShaderSource,
-                    colors[color][0], colors[color][1], colors[color][2]));
-        glCompileShader(fragmentShader);
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetShaderInfoLog(fragmentShader));
-        }
-
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        glGetProgramiv(shaderProgram, GL_COMPILE_STATUS, success);
-        if (success.get(0) == 0) {
-            System.err.println(glGetProgramInfoLog(shaderProgram));
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
     }
 
-    public void genVAO(int rot, int dist) {
+    public void genVAO(int rot, double dist, int usage) {
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
@@ -99,7 +104,7 @@ public class Block {
                x2 = Math.cos((rot+1) * Math.PI / 3),
                y2 = Math.sin((rot+1) * Math.PI / 3);
 
-        double vertices[] = {
+        vertices = new double[] {
             x1 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), y1 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), 0,
             x1 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y1 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
             x2 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y2 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
@@ -107,7 +112,7 @@ public class Block {
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, glGenBuffers());
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices, usage);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers());
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
