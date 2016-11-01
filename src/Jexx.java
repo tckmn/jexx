@@ -15,17 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
+
 import java.util.Optional;
 import java.util.OptionalInt;
+
 import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
+import org.lwjgl.openal.*;
+import org.lwjgl.stb.STBVorbisInfo;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -33,6 +43,9 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.openal.AL10.*;
+import static org.lwjgl.openal.ALC10.*;
+import static org.lwjgl.stb.STBVorbis.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
@@ -52,6 +65,8 @@ public class Jexx {
     private ArrayList<Block> fallingBlocks = new ArrayList<>();
 
     private long window;
+
+    private long alcContext, alcDevice;
 
     private int mod(int x, int y) {
         return x % y + (x < 0 ? y : 0);
@@ -109,10 +124,53 @@ public class Jexx {
         } finally {
             glfwTerminate();
             glfwSetErrorCallback(null).free();
+
+            alcDestroyContext(alcContext);
+            alcCloseDevice(alcDevice);
         }
     }
 
     private void init() {
+        // OpenAL stuff
+
+        alcDevice = alcOpenDevice((ByteBuffer)null);
+        alcContext = alcCreateContext(alcDevice, (IntBuffer)null);
+        alcMakeContextCurrent(alcContext);
+        AL.createCapabilities(ALC.createCapabilities(alcDevice));
+
+        int buffer = alGenBuffers();
+        int source = alGenSources();
+
+        ByteBuffer vorbis;
+        try {
+            try (SeekableByteChannel fc = Files.newByteChannel(Paths.get("/usr/share/SFML/examples/sound/resources/orchestral.ogg"))) {
+                vorbis = BufferUtils.createByteBuffer((int)fc.size() + 1);
+                while (fc.read(vorbis) != -1);
+            }
+            vorbis.flip();
+        } catch (java.io.IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        IntBuffer error = BufferUtils.createIntBuffer(1);
+        long decoder = stb_vorbis_open_memory(vorbis, error, null);
+        if (decoder == NULL) System.err.println("stb_vorbis_open_memory: " + error.get(0));
+        STBVorbisInfo info = STBVorbisInfo.malloc();
+        stb_vorbis_get_info(decoder, info);
+        int channels = info.channels();
+        int lengthSamples = stb_vorbis_stream_length_in_samples(decoder);
+        ShortBuffer pcm = BufferUtils.createShortBuffer(lengthSamples);
+        pcm.limit(stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels);
+        stb_vorbis_close(decoder);
+
+        alBufferData(buffer, info.channels() == 1 ?
+                AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
+                pcm, info.sample_rate());
+        alSourcei(source, AL_BUFFER, buffer);
+        alSourcePlay(source);
+
+        // OpenGL stuff
+
         GLFWErrorCallback.createPrint(System.err).set();
 
         if (!glfwInit()) {
