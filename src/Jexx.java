@@ -67,7 +67,7 @@ public class Jexx {
     private long window;
 
     private long alcContext, alcDevice;
-    private int clickSource;
+    private int clickSource, slideSource, popSource;
 
     private int mod(int x, int y) {
         return x % y + (x < 0 ? y : 0);
@@ -174,6 +174,8 @@ public class Jexx {
         AL.createCapabilities(ALC.createCapabilities(alcDevice));
 
         clickSource = loadAudioSource("click.ogg");
+        slideSource = loadAudioSource("slide.ogg");
+        popSource = loadAudioSource("pop.ogg");
 
         // OpenGL stuff
 
@@ -212,6 +214,7 @@ public class Jexx {
                     }
                 }
                 rotationOffset -= Math.PI / 3;
+                alSourcePlay(popSource);
             } else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
                 for (int i = 4; i >= 0; --i) {
                     for (int j = 0; j < NUM_BLOCKS; ++j) {
@@ -221,6 +224,7 @@ public class Jexx {
                     }
                 }
                 rotationOffset += Math.PI / 3;
+                alSourcePlay(popSource);
             }
         });
 
@@ -266,18 +270,22 @@ public class Jexx {
 
             hex.draw();
 
+            boolean playClick = false, playSlide = false;
             for (ListIterator<Block> it = fallingBlocks.listIterator(); it.hasNext();) {
                 Block block = it.next();
                 block.dist -= BLOCK_SPEED * deltaTime;
                 if (block.dist <= 0 || blocks[block.rot][(int)block.dist].color != -1) {
                     it.remove();
-                    alSourcePlay(clickSource);
+                    playClick = true;
                     OptionalInt d = IntStream.range(0, NUM_BLOCKS)
                         .filter(x -> { return blocks[block.rot][x].color == -1; })
                         .findFirst();
                     if (d.isPresent()) {
                         blocks[block.rot][d.getAsInt()].color = block.color;
                         int numTouching = floodFill(block.rot, d.getAsInt(), block.color);
+                        if (numTouching >= 3) {
+                            playSlide = true;
+                        }
                         postFloodFill(it, numTouching);
                     } else {
                         // TODO game is lost
@@ -288,6 +296,9 @@ public class Jexx {
                 }
             }
             Stream.of(blocks).flatMap(Stream::of).forEach(Block::draw);
+
+            if (playSlide) alSourcePlay(slideSource);
+            else if (playClick) alSourcePlay(clickSource);
 
             glfwSwapBuffers(window);
         }
