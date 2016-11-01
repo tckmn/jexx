@@ -67,6 +67,7 @@ public class Jexx {
     private long window;
 
     private long alcContext, alcDevice;
+    private int clickSource;
 
     private int mod(int x, int y) {
         return x % y + (x < 0 ? y : 0);
@@ -114,6 +115,40 @@ public class Jexx {
         fallingBlocks.add(block);
     }
 
+    private int loadAudioSource(String filePath) {
+        int buffer = alGenBuffers();
+        int source = alGenSources();
+
+        ByteBuffer vorbis;
+        try {
+            try (SeekableByteChannel fc = Files.newByteChannel(Paths.get(filePath))) {
+                vorbis = BufferUtils.createByteBuffer((int)fc.size() + 1);
+                while (fc.read(vorbis) != -1);
+            }
+            vorbis.flip();
+        } catch (java.io.IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        IntBuffer error = BufferUtils.createIntBuffer(1);
+        long decoder = stb_vorbis_open_memory(vorbis, error, null);
+        if (decoder == NULL) System.err.println("stb_vorbis_open_memory: " + error.get(0));
+        STBVorbisInfo info = STBVorbisInfo.malloc();
+        stb_vorbis_get_info(decoder, info);
+        int channels = info.channels();
+        int lengthSamples = stb_vorbis_stream_length_in_samples(decoder);
+        ShortBuffer pcm = BufferUtils.createShortBuffer(lengthSamples);
+        pcm.limit(stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels);
+        stb_vorbis_close(decoder);
+
+        alBufferData(buffer, info.channels() == 1 ?
+                AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
+                pcm, info.sample_rate());
+        alSourcei(source, AL_BUFFER, buffer);
+
+        return source;
+    }
+
     public void run() {
         try {
             init();
@@ -138,36 +173,7 @@ public class Jexx {
         alcMakeContextCurrent(alcContext);
         AL.createCapabilities(ALC.createCapabilities(alcDevice));
 
-        int buffer = alGenBuffers();
-        int source = alGenSources();
-
-        ByteBuffer vorbis;
-        try {
-            try (SeekableByteChannel fc = Files.newByteChannel(Paths.get("/usr/share/SFML/examples/sound/resources/orchestral.ogg"))) {
-                vorbis = BufferUtils.createByteBuffer((int)fc.size() + 1);
-                while (fc.read(vorbis) != -1);
-            }
-            vorbis.flip();
-        } catch (java.io.IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        IntBuffer error = BufferUtils.createIntBuffer(1);
-        long decoder = stb_vorbis_open_memory(vorbis, error, null);
-        if (decoder == NULL) System.err.println("stb_vorbis_open_memory: " + error.get(0));
-        STBVorbisInfo info = STBVorbisInfo.malloc();
-        stb_vorbis_get_info(decoder, info);
-        int channels = info.channels();
-        int lengthSamples = stb_vorbis_stream_length_in_samples(decoder);
-        ShortBuffer pcm = BufferUtils.createShortBuffer(lengthSamples);
-        pcm.limit(stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels);
-        stb_vorbis_close(decoder);
-
-        alBufferData(buffer, info.channels() == 1 ?
-                AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
-                pcm, info.sample_rate());
-        alSourcei(source, AL_BUFFER, buffer);
-        alSourcePlay(source);
+        clickSource = loadAudioSource("click.ogg");
 
         // OpenGL stuff
 
@@ -265,6 +271,7 @@ public class Jexx {
                 block.dist -= BLOCK_SPEED * deltaTime;
                 if (block.dist <= 0 || blocks[block.rot][(int)block.dist].color != -1) {
                     it.remove();
+                    alSourcePlay(clickSource);
                     OptionalInt d = IntStream.range(0, NUM_BLOCKS)
                         .filter(x -> { return blocks[block.rot][x].color == -1; })
                         .findFirst();
