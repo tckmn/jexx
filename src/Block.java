@@ -8,7 +8,7 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Block {
 
-    private static final String VERTEXSHADERSOURCE =
+    private static final String VERTEX_SHADER_SOURCE =
         "#version 330 core\n"
         + "layout (location = 0) in vec3 position;\n"
         + "uniform float rotationOffset;\n"
@@ -21,7 +21,7 @@ public class Block {
 
     private static int[] rotationOffsets;
 
-    private static final String FRAGMENTSHADERSOURCE =
+    private static final String FRAGMENT_SHADER_SOURCE =
         "#version 330 core\n"
         + "out vec4 color;\n"
         + "void main() {\n"
@@ -76,7 +76,7 @@ public class Block {
             final IntBuffer success = BufferUtils.createIntBuffer(1);
 
             final int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertexShader, VERTEXSHADERSOURCE);
+            glShaderSource(vertexShader, VERTEX_SHADER_SOURCE);
             glCompileShader(vertexShader);
             glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
             if (success.get(0) == 0) {
@@ -84,7 +84,7 @@ public class Block {
             }
 
             final int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragmentShader, String.format(FRAGMENTSHADERSOURCE,
+            glShaderSource(fragmentShader, String.format(FRAGMENT_SHADER_SOURCE,
                         COLORS[c][0], COLORS[c][1], COLORS[c][2]));
             glCompileShader(fragmentShader);
             glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);

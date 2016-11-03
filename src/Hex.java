@@ -11,7 +11,7 @@ public class Hex {
 
     private static final double SQRT_3_4 = Math.sqrt(3) / 2;
 
-    private static final String VERTEXSHADERSOURCE =
+    private static final String VERTEX_SHADER_SOURCE =
         "#version 330 core\n"
         + "layout (location = 0) in vec3 position;\n"
         + "uniform float rotationOffset;\n"
@@ -22,7 +22,7 @@ public class Hex {
         + "        position.z, 1.0);\n"
         + "}";
 
-    private static final String FRAGMENTSHADERSOURCE =
+    private static final String FRAGMENT_SHADER_SOURCE =
         "#version 330 core\n"
         + "out vec4 color;\n"
         + "void main() {\n"
@@ -53,7 +53,7 @@ public class Hex {
         final IntBuffer success = BufferUtils.createIntBuffer(1);
 
         final int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, VERTEXSHADERSOURCE);
+        glShaderSource(vertexShader, VERTEX_SHADER_SOURCE);
         glCompileShader(vertexShader);
         glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
         if (success.get(0) == 0) {
@@ -61,7 +61,7 @@ public class Hex {
         }
 
         final int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, FRAGMENTSHADERSOURCE);
+        glShaderSource(fragmentShader, FRAGMENT_SHADER_SOURCE);
         glCompileShader(fragmentShader);
         glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
         if (success.get(0) == 0) {
