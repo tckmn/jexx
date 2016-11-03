@@ -103,7 +103,7 @@ public class Hex {
     public void draw() {
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
-        glUniform1f(rotationOffset, (float) Jexx.rotationOffset);
+        glUniform1f(rotationOffset, (float)Jexx.rotationOffset);
         glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
