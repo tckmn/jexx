@@ -1,6 +1,7 @@
 import java.nio.IntBuffer;
 
 import org.lwjgl.*;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -10,23 +11,21 @@ public class Block {
 
     private static final String VERTEX_SHADER_SOURCE =
         "#version 330 core\n"
-        + "layout (location = 0) in vec3 position;\n"
-        + "uniform float rotationOffset;\n"
-        + "void main() {\n"
-        + "    gl_Position = vec4("
-        + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
-        + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
-        + "        position.z, 1.0);\n"
-        + "}";
-
-    private static int[] rotationOffsets;
+      + "layout (location = 0) in vec3 position;\n"
+      + "uniform float rotationOffset;\n"
+      + "void main() {\n"
+      + "    gl_Position = vec4("
+      + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
+      + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
+      + "        position.z, 1.0);\n"
+      + "}";
 
     private static final String FRAGMENT_SHADER_SOURCE =
         "#version 330 core\n"
-        + "out vec4 color;\n"
-        + "void main() {\n"
-        + "    color = vec4(%d / 255.0, %d / 255.0, %d / 255.0, 1.0f);\n"
-        + "}";
+      + "out vec4 color;\n"
+      + "void main() {\n"
+      + "    color = vec4(%d / 255.0, %d / 255.0, %d / 255.0, 1.0f);\n"
+      + "}";
 
     private static final int[] INDICES = {
         0, 1, 2,
@@ -42,6 +41,7 @@ public class Block {
         {0xba, 0x8b, 0xaf},  // purple
     };
 
+    private static int[] rotationOffsets;
     private static int[] shaders;
 
     public int color = -1;
@@ -137,17 +137,10 @@ public class Block {
                      y2 = Math.sin((rot+1) * Math.PI / 3);
 
         vertices = new double[] {
-            x1 * (Jexx.HEX_SIZE + dist * Jexx.BLOCK_SIZE), y1
-               * (Jexx.HEX_SIZE + dist * Jexx.BLOCK_SIZE), 0,
-
-            x1 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y1
-               * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
-
-            x2 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y2
-               * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
-
-            x2 * (Jexx.HEX_SIZE + dist * Jexx.BLOCK_SIZE), y2
-               * (Jexx.HEX_SIZE + dist * Jexx.BLOCK_SIZE), 0,
+            x1 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), y1 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), 0,
+            x1 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y1 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
+            x2 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), y2 * (Jexx.HEX_SIZE + (dist+1) * Jexx.BLOCK_SIZE), 0,
+            x2 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), y2 * (Jexx.HEX_SIZE + dist     * Jexx.BLOCK_SIZE), 0,
         };
 
         if (!initial) {

@@ -13,21 +13,21 @@ public class Hex {
 
     private static final String VERTEX_SHADER_SOURCE =
         "#version 330 core\n"
-        + "layout (location = 0) in vec3 position;\n"
-        + "uniform float rotationOffset;\n"
-        + "void main() {\n"
-        + "    gl_Position = vec4("
-        + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
-        + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
-        + "        position.z, 1.0);\n"
-        + "}";
+      + "layout (location = 0) in vec3 position;\n"
+      + "uniform float rotationOffset;\n"
+      + "void main() {\n"
+      + "    gl_Position = vec4("
+      + "        position.x * cos(rotationOffset) + position.y * sin(rotationOffset),"
+      + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
+      + "        position.z, 1.0);\n"
+      + "}";
 
     private static final String FRAGMENT_SHADER_SOURCE =
         "#version 330 core\n"
-        + "out vec4 color;\n"
-        + "void main() {\n"
-        + "    color = vec4(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0, 1.0f);\n"
-        + "}";
+      + "out vec4 color;\n"
+      + "void main() {\n"
+      + "    color = vec4(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0, 1.0f);\n"
+      + "}";
 
     private static final double[] VERTICES = {
         -1   * Jexx.HEX_SIZE, 0         * Jexx.HEX_SIZE, 0,
