@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
 
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import java.util.ArrayList;
@@ -50,18 +49,20 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
 
-    public static final double HEX_SIZE = 0.2;
-    public static final double BLOCK_SIZE = 0.08;
-    public static final double BLOCK_SPEED = 3;
-    public static final double BLOCK_DELAY = 3;
+    public static final double HEX_SIZE = 0.2,
+                               BLOCK_SIZE = 0.08,
+                               BLOCK_SPEED = 3,
+                               BLOCK_DELAY = 3;
 
-    private final int WIDTH = 600, HEIGHT = 600;
-    private final int NUM_BLOCKS = 8;
+    static double rotationOffset;
+
+    private static final int WIDTH = 600,
+                             HEIGHT = 600,
+                             NUM_BLOCKS = 8;
 
     private Hex hex = new Hex();
-    public static double rotationOffset = 0;
 
-    private Block[][] blocks = new Block[6][NUM_BLOCKS];
+    protected Block[][] blocks = new Block[6][NUM_BLOCKS];
     private ArrayList<Block> fallingBlocks = new ArrayList<>();
 
     private long window;
@@ -69,13 +70,13 @@ public class Jexx {
     private long alcContext, alcDevice;
     private int clickSource, slideSource, popSource;
 
-    private int mod(int x, int y) {
+    private int mod(final int x, final int y) {
         return x % y + (x < 0 ? y : 0);
     }
 
-    private int floodFill(int i, int j, int color) {
+    private int floodFill(final int i, final int j, final int color) {
         if (j < 0 || j >= NUM_BLOCKS) return 0;
-        boolean rightColor = blocks[i][j].color == color;
+        final boolean rightColor = blocks[i][j].color == color;
         if (rightColor) blocks[i][j].color += 100;
         return rightColor ? (1 +
             floodFill(mod(i+1, 6), j, color) +
@@ -84,7 +85,7 @@ public class Jexx {
             floodFill(i, j-1, color)) : 0;
     }
 
-    private void postFloodFill(ListIterator<Block> it, int numTouching) {
+    private void postFloodFill(final ListIterator<Block> it, final int numTouching) {
         for (int r = 0; r < 6; ++r) {
             for (int d = 0; d < NUM_BLOCKS; ++d) {
                 if (blocks[r][d].color >= 100) {
@@ -92,7 +93,7 @@ public class Jexx {
                         blocks[r][d].color = -1;
                         for (int d2 = d + 1; d2 < NUM_BLOCKS; ++d2) {
                             if (blocks[r][d2].color != -1 && blocks[r][d2].color < 100) {
-                                Block fall = new Block();
+                                final Block fall = new Block();
                                 fall.color = blocks[r][d2].color;
                                 fall.genVAO(r, d2, GL_DYNAMIC_DRAW);
                                 it.add(fall);
@@ -109,17 +110,17 @@ public class Jexx {
     }
 
     private void spawnBlocks() {
-        Block block = new Block();
+        final Block block = new Block();
         block.color = (int)(Math.random() * 6);
         block.genVAO((int)(Math.random() * 6), NUM_BLOCKS, GL_DYNAMIC_DRAW);
         fallingBlocks.add(block);
     }
 
-    private int loadAudioSource(String filePath) {
-        int buffer = alGenBuffers();
-        int source = alGenSources();
+    private int loadAudioSource(final String filePath) {
+        final int buffer = alGenBuffers();
+        final int source = alGenSources();
 
-        ByteBuffer vorbis;
+        final ByteBuffer vorbis;
         try {
             try (SeekableByteChannel fc = Files.newByteChannel(Paths.get(filePath))) {
                 vorbis = BufferUtils.createByteBuffer((int)fc.size() + 1);
@@ -130,14 +131,14 @@ public class Jexx {
             throw new RuntimeException(ex);
         }
 
-        IntBuffer error = BufferUtils.createIntBuffer(1);
-        long decoder = stb_vorbis_open_memory(vorbis, error, null);
+        final IntBuffer error = BufferUtils.createIntBuffer(1);
+        final long decoder = stb_vorbis_open_memory(vorbis, error, null);
         if (decoder == NULL) System.err.println("stb_vorbis_open_memory: " + error.get(0));
-        STBVorbisInfo info = STBVorbisInfo.malloc();
+        final STBVorbisInfo info = STBVorbisInfo.malloc();
         stb_vorbis_get_info(decoder, info);
-        int channels = info.channels();
-        int lengthSamples = stb_vorbis_stream_length_in_samples(decoder);
-        ShortBuffer pcm = BufferUtils.createShortBuffer(lengthSamples);
+        final int channels = info.channels();
+        final int lengthSamples = stb_vorbis_stream_length_in_samples(decoder);
+        final ShortBuffer pcm = BufferUtils.createShortBuffer(lengthSamples);
         pcm.limit(stb_vorbis_get_samples_short_interleaved(decoder, channels, pcm) * channels);
         stb_vorbis_close(decoder);
 
@@ -197,8 +198,8 @@ public class Jexx {
 
         GL.createCapabilities();
 
-        IntBuffer w = BufferUtils.createIntBuffer(1);
-        IntBuffer h = BufferUtils.createIntBuffer(1);
+        final IntBuffer w = BufferUtils.createIntBuffer(1);
+        final IntBuffer h = BufferUtils.createIntBuffer(1);
         glfwGetFramebufferSize(window, w, h);
         glViewport(0, 0, w.get(0), h.get(0));
 
@@ -255,8 +256,8 @@ public class Jexx {
 
             glClear(GL_COLOR_BUFFER_BIT);
 
-            double time = glfwGetTime();
-            double deltaTime = time - lastTime;
+            final double time = glfwGetTime();
+            final double deltaTime = time - lastTime;
             lastTime = time;
 
             rotationOffset *= Math.pow(0.003, deltaTime);
@@ -272,17 +273,17 @@ public class Jexx {
 
             boolean playClick = false, playSlide = false;
             for (ListIterator<Block> it = fallingBlocks.listIterator(); it.hasNext();) {
-                Block block = it.next();
+                final Block block = it.next();
                 block.dist -= BLOCK_SPEED * deltaTime;
                 if (block.dist <= 0 || blocks[block.rot][(int)block.dist].color != -1) {
                     it.remove();
                     playClick = true;
-                    OptionalInt d = IntStream.range(0, NUM_BLOCKS)
+                    final OptionalInt d = IntStream.range(0, NUM_BLOCKS)
                         .filter(x -> { return blocks[block.rot][x].color == -1; })
                         .findFirst();
                     if (d.isPresent()) {
                         blocks[block.rot][d.getAsInt()].color = block.color;
-                        int numTouching = floodFill(block.rot, d.getAsInt(), block.color);
+                        final int numTouching = floodFill(block.rot, d.getAsInt(), block.color);
                         if (numTouching >= 3) {
                             playSlide = true;
                         }
@@ -304,7 +305,7 @@ public class Jexx {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         new Jexx().run();
     }
 

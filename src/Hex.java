@@ -11,7 +11,7 @@ public class Hex {
 
     private static final double SQRT_3_4 = Math.sqrt(3) / 2;
 
-    private static final String vertexShaderSource =
+    private static final String VERTEX_SHADER_SOURCE =
         "#version 330 core\n"
       + "layout (location = 0) in vec3 position;\n"
       + "uniform float rotationOffset;\n"
@@ -21,46 +21,47 @@ public class Hex {
       + "        position.y * cos(rotationOffset) - position.x * sin(rotationOffset),"
       + "        position.z, 1.0);\n"
       + "}";
-    private int rotationOffset;
 
-    private static final String fragmentShaderSource =
+    private static final String FRAGMENT_SHADER_SOURCE =
         "#version 330 core\n"
       + "out vec4 color;\n"
       + "void main() {\n"
       + "    color = vec4(0x58 / 255.0, 0x58 / 255.0, 0x58 / 255.0, 1.0f);\n"
       + "}";
 
-    private static final double vertices[] = {
-          -1 * Jexx.HEX_SIZE,         0 * Jexx.HEX_SIZE, 0,
-        -0.5 * Jexx.HEX_SIZE,  SQRT_3_4 * Jexx.HEX_SIZE, 0,
-         0.5 * Jexx.HEX_SIZE,  SQRT_3_4 * Jexx.HEX_SIZE, 0,
-           1 * Jexx.HEX_SIZE,         0 * Jexx.HEX_SIZE, 0,
+    private static final double[] VERTICES = {
+        -1   * Jexx.HEX_SIZE, 0         * Jexx.HEX_SIZE, 0,
+        -0.5 * Jexx.HEX_SIZE, SQRT_3_4  * Jexx.HEX_SIZE, 0,
+         0.5 * Jexx.HEX_SIZE, SQRT_3_4  * Jexx.HEX_SIZE, 0,
+         1   * Jexx.HEX_SIZE, 0         * Jexx.HEX_SIZE, 0,
          0.5 * Jexx.HEX_SIZE, -SQRT_3_4 * Jexx.HEX_SIZE, 0,
-        -0.5 * Jexx.HEX_SIZE, -SQRT_3_4 * Jexx.HEX_SIZE, 0
+        -0.5 * Jexx.HEX_SIZE, -SQRT_3_4 * Jexx.HEX_SIZE, 0,
     };
 
-    private static final int indices[] = {
+    private static final int[] INDICES = {
         0, 1, 2,
         0, 2, 3,
         0, 3, 4,
-        0, 4, 5
+        0, 4, 5,
     };
+
+    private int rotationOffset;
 
     private int shaderProgram, vao;
 
     public void compileShader() {
-        IntBuffer success = BufferUtils.createIntBuffer(1);
+        final IntBuffer success = BufferUtils.createIntBuffer(1);
 
-        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, vertexShaderSource);
+        final int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, VERTEX_SHADER_SOURCE);
         glCompileShader(vertexShader);
         glGetShaderiv(vertexShader, GL_COMPILE_STATUS, success);
         if (success.get(0) == 0) {
             System.err.println(glGetShaderInfoLog(vertexShader));
         }
 
-        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, fragmentShaderSource);
+        final int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, FRAGMENT_SHADER_SOURCE);
         glCompileShader(fragmentShader);
         glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, success);
         if (success.get(0) == 0) {
@@ -87,10 +88,10 @@ public class Hex {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, glGenBuffers());
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, VERTICES, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glGenBuffers());
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, INDICES, GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_DOUBLE, false, 0, 0);
         glEnableVertexAttribArray(0);
