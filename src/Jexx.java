@@ -18,9 +18,7 @@
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.FloatBuffer;
 
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
@@ -32,20 +30,24 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.lwjgl.*;
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
-import org.lwjgl.openal.*;
-import org.lwjgl.stb.STBVorbisInfo;
 
+import org.lwjgl.glfw.*;
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
+
+import org.lwjgl.opengl.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
+
+import org.lwjgl.openal.*;
 import static org.lwjgl.openal.AL10.*;
 import static org.lwjgl.openal.ALC10.*;
+
+import org.lwjgl.stb.STBVorbisInfo;
 import static org.lwjgl.stb.STBVorbis.*;
+
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class Jexx {
@@ -60,6 +62,7 @@ public class Jexx {
 
     private Hex hex = new Hex();
     public static double rotationOffset = 0;
+    private int score = 0;
 
     private Block[][] blocks = new Block[6][NUM_BLOCKS];
     private ArrayList<Block> fallingBlocks = new ArrayList<>();
@@ -90,6 +93,7 @@ public class Jexx {
                 if (blocks[r][d].color >= 100) {
                     if (numTouching >= 3) {
                         blocks[r][d].color = -1;
+                        ++score;
                         for (int d2 = d + 1; d2 < NUM_BLOCKS; ++d2) {
                             if (blocks[r][d2].color != -1 && blocks[r][d2].color < 100) {
                                 Block fall = new Block();
@@ -121,11 +125,7 @@ public class Jexx {
 
         ByteBuffer vorbis;
         try {
-            try (SeekableByteChannel fc = Files.newByteChannel(Paths.get(filePath))) {
-                vorbis = BufferUtils.createByteBuffer((int)fc.size() + 1);
-                while (fc.read(vorbis) != -1);
-            }
-            vorbis.flip();
+            vorbis = Util.readByteBuffer(filePath);
         } catch (java.io.IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -250,6 +250,10 @@ public class Jexx {
         double lastTime = glfwGetTime();
         double timeSinceBlock = 0;
 
+        Text scoreText = new Text();
+        scoreText.compileShader();
+        scoreText.loadFont("fonts/OpenSans-Regular.ttf");
+
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
 
@@ -296,6 +300,8 @@ public class Jexx {
                 }
             }
             Stream.of(blocks).flatMap(Stream::of).forEach(Block::draw);
+
+            scoreText.genVAO("Score: " + score);
 
             if (playSlide) alSourcePlay(slideSource);
             else if (playClick) alSourcePlay(clickSource);
